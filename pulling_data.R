@@ -6,6 +6,7 @@ library(mosaic)
 library(scales)
 library(rnoaa)
 library(lubridate)
+library(magrittr)
 library(tidyverse)
 
 
@@ -147,10 +148,30 @@ average_flow <- full_join(week_avg,month_avg) %>%
   select(-c(month,Month))
   
 
+#for the Driggs plant GHCND:USC00102676
+ncdc_stations(datasetid='GHCND', locationid='FIPS:16081', stationid='GHCND:USC00102676', token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
+#out_d <- ncdc(datasetid='GHCND', stationid='GHCND:USC00102676', datatypeid='PRCP', startdate = '2000-12-01', enddate = '2000-12-31',token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
+out_d <- ncdc(datasetid = 'GHCND', stationid = 'GHCND:USC00102676',
+              # datatypeid= c('TMAX',  'PRCP'),
+              datatypeid= c('PRCP'),
+              startdate = '2000-12-01', enddate = '2000-12-31', limit = 1000,
+              token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
 
-ncdc_stations(datasetid='GHCND', locationid='FIPS:12017', stationid='GHCND:USC00102676', token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
-out <- ncdc(datasetid='NORMAL_DLY', datatypeid='dly-tmax-normal', startdate = '2010-05-01', enddate = '2010-05-10',token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
-ncdc(datasetid = 'NORMAL_DLY', locationid = 'ZIP:83422', datatypeid = 'HPCP', limit = 5, token =  "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
+data <- out_d$data %>% 
+  as_tibble() %>% 
+  # filter(datatype == "TMAX" | datatype == "PRCP") %>% 
+  filter(datatype == "PRCP") %>% 
+  select(date, datatype, station, value) %>% 
+  mutate(date = as.Date(date)) %>% 
+  mutate(station = gsub("GHCND:USC00102676", "rnoaa", station)) %>% 
+  mutate(value = case_when(
+    datatype == "PRCP"  ~ value/10)) 
+# datatype == "TMAX" ~ value/10))
+
+#for the TETONIA EXPERIMENT STATION GHCND:USC00109065
+ncdc_stations(datasetid='GHCND', locationid='FIPS:16081', stationid='GHCND:USC00109065', token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
+out_t <- ncdc(datasetid='GHCND', stationid='GHCND:USC00109065', startdate = '2000-12-01', enddate = '2000-12-31',token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
+
 #NCDC = national climate data center
 #datasetid: (required) Accepts a single valid dataset id. Data returned will be from the dataset specified
 #locationid: Accepts a valid location id or a vector or list of location ids (optional)
@@ -163,6 +184,26 @@ ncdc(datasetid = 'NORMAL_DLY', locationid = 'ZIP:83422', datatypeid = 'HPCP', li
   # certain radius of a location, the user can use the meteo_nearby_stations function.
 #Token: This is the API key
 #HPCP:	Hourly precipitation data.  This is the only data type reported.  (Includes the daily total.)
+#FIPS codes for 51 US states and territories
+  #state. US state name.
+  #county. County name.
+  #fips_state. Numeric value, from 1 to 51.
+  #fips_county. Numeric value, from 1 to 840.
+  #fips. Numeric value, from 1001 to 56045
+#GHCND = Global Historical Climatology Network Daily (Data)
+
+###In the data set ####
+#P: identified as "missing presumed zero" in DSI 3200 and 3206
+
+# fl_c = completeness
+# fl_m = measurement
+# fl_d = day
+# fl_q = quality
+# fl_s = source
+# fl_t = time
+# fl_cmiss = consecutive missing
+# fl_miss = missing
+# fl_u = units
 
 #Hone in on the weather data, you need to have this done by next week 
 
