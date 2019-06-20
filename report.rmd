@@ -3,6 +3,8 @@ title: "DMR Report"
 output: word_document
 params:
   n: NA
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -23,38 +25,29 @@ df <- data.frame(params$n)
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-# plot_ly() %>%
-#         add_trace(x=as.Date(df$date_time),
-#                   y=df$flow,
-#                   size=df$flow,
-#                   marker = list(
-#                     color = 'rgba(93, 204, 25, 1)',
-#                     line = list(
-#                       color = 'rgba(93, 204, 25, 1)'
-#                     )
-#                   ),
-#                   line = list(
-#                     color = 'rgba(0, 0, 0, 1)',
-#                     line = list(
-#                       color = 'rgba(0, 0, 0, 1)'
-#                     )
-#                   ),
-#                   # colors=c("green","black"),
-#                   mode='markers+lines',
-#                   mode="scatter",
-#                   name="Average Flow",
-#                   hoverinfo='text',
-#                   text=paste0(df$day,', ', format(df$date_time,format="%d-%m-%Y"), '\n', 'Flow: ', df$flow)) %>%
-#         # add_trace(x=as.Date(df$date_time),
-#         #           y=df$flow,
-#         #           # color = df$flow,
-#         #           mode='lines',
-#         #           mode="scatter",
-#         #           name="Average Flow") %>%
-#         layout(xaxis=list(
-#           tick0 = df$date_time[1]),
-#           dtick = 7)
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, dpi=150}
+
+df4 <- df %>%
+  group_by(week_num) %>%
+  slice(which.max(week_num)) %>%
+  ungroup()
+
+ggplot(df, aes(x=date_time, y=flow)) +
+  geom_point(aes(size = flow, colour = flow)) +
+  geom_line(aes(colour = flow)) +
+  scale_x_date(breaks = "day", labels=date_format("%y-%m-%d")) +
+  scale_colour_gradient(low = "green", high = "black") +
+  guides(color=guide_legend(), size = guide_legend()) +
+  geom_vline(data=df4,aes(xintercept = as.Date(date_time,"%Y-%m-%d")),
+             linetype="dotted",
+             color = "black", size=1) +
+  labs(y="Flow",
+       x="Date",
+       title="Flow Rate") +
+  #xintercept = as.Date("2016-03-29","%Y-%m-%d"))
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}

@@ -194,19 +194,26 @@ server <- function(input, output){
     output$selected_dailies <- renderTable({average_flow()},
                                            include.rownames=FALSE)
     #download data for the data tab
+    # output$downloadData <- downloadHandler(
+    #   filename = function() {
+    #     paste(input$dates, ".csv", sep = "")
+    #   },
+    #   content = function(file) {
+    #     write.csv(flow_df(), file, row.names = T)
+    #   }
+    # )
+    
     output$downloadData <- downloadHandler(
       filename = function() {
-        paste(input$dates, ".csv", sep = "")
       },
       content = function(file) {
-        write.csv(flow_df(), file, row.names = FALSE)
+        write.csv(flow_df(), file)
       }
     )
-    
     #download data for the first tab in the app
     output$report <- downloadHandler(
       # For PDF output, change this to "report.pdf"
-      filename = "report.docx",
+      filename = "report.doc",
       content = function(file) {
         # Copy the report file to a temporary directory before processing it, in
         # case we don't have write permissions to the current working dir (which

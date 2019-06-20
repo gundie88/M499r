@@ -1,14 +1,14 @@
-  #install.packages(c("httr", "jsonlite", "lubridate"))
-  library(httr)
-  library(jsonlite)
-  library(stringr)
-  library(mosaic)
-  library(scales)
-  library(rnoaa)
-  library(lubridate)
-  library(magrittr)
-  library(tidyverse)
-  
+#install.packages(c("httr", "jsonlite", "lubridate"))
+library(httr)
+library(jsonlite)
+library(stringr)
+library(mosaic)
+library(scales)
+library(rnoaa)
+library(lubridate)
+library(magrittr)
+library(tidyverse)
+
 
 # This is the url to give datat
   #https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=13055340&startDT=2018-04-01
