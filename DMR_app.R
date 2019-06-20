@@ -1,4 +1,5 @@
 library(shiny)
+library(shinydashboard)
 library(rhandsontable)
 library(readxl)
 library(shiny)
@@ -11,38 +12,41 @@ library(tidyverse)
 
 
 if (interactive()){
-ui <- fluidPage(
-      sidebarLayout(
-        sidebarPanel( 
+ui <- dashboardPage(
+      dashboardHeader(title = "DMR"),
+      dashboardSidebar(
       # date range selector format yyyy-mm-dd
       # start = '2000-01-01', end = '2000-01-31',
       dateRangeInput("dates", label = h3("Date range"), start=paste0(strsplit(as.character(Sys.Date()),"-")[[1]][1],"-01-01"), 
                      end = paste0(strsplit(as.character(Sys.Date()),"-")[[1]][1],"-01-31")),
       submitButton("Submit", icon("refresh"))
           ),
-      mainPanel(
+      dashboardBody(
         tabsetPanel(type = "tabs",
                     tabPanel("Plot",
                              # column(
                              #   width = 6,
                              plotlyOutput("plot1", height = "500px"),
                                # ),
-                               column(
-                                width = 6,
-                                tableOutput("selected_dailies"))),
+                               # column(
+                                # width = 6,
+                                tableOutput("selected_dailies"),
+                             downloadButton("report", "Generate report")
+                    ),
                     tabPanel("Data", 
                              column(
-                               width = 8,
-                               dataTableOutput("flow_data")))
+                              width = 8,
+                              dataTableOutput("flow_data")),
+                              downloadButton("downloadData", "Download")
+                    )
                     )
         # column(6, dataTableOutput("flow_data")),
         # plotOutput("plot1")
         # tags$style(type="text/css",
         #            ".shiny-output-error { visibility: hidden; }",
         #            ".shiny-output-error:before { visibility: hidden; }")
-        )
-        )
       )
+  )
 server <- function(input, output){
 
     flow_df <- reactive({
@@ -170,7 +174,7 @@ server <- function(input, output){
       ungroup() %>% 
       mutate(month_name = month.name[month])
     })
-    
+      
     #making df of month and week avg
     average_flow <- reactive({
       full_join(week_avg(),month_avg()) %>% 
@@ -189,6 +193,39 @@ server <- function(input, output){
     #making a table from the average_flow data
     output$selected_dailies <- renderTable({average_flow()},
                                            include.rownames=FALSE)
+    #download data for the data tab
+    output$downloadData <- downloadHandler(
+      filename = function() {
+        paste(input$dates, ".csv", sep = "")
+      },
+      content = function(file) {
+        write.csv(flow_df(), file, row.names = FALSE)
+      }
+    )
+    
+    #download data for the first tab in the app
+    output$report <- downloadHandler(
+      # For PDF output, change this to "report.pdf"
+      filename = "report.docx",
+      content = function(file) {
+        # Copy the report file to a temporary directory before processing it, in
+        # case we don't have write permissions to the current working dir (which
+        # can happen when deployed).
+        tempReport <- file.path(tempdir(), "report.Rmd")
+        file.copy("report.Rmd", tempReport, overwrite = TRUE)
+        
+        # Set up parameters to pass to Rmd document
+        params <- list(n = flow_df())
+        
+        # Knit the document, passing in the `params` list, and eval it in a
+        # child of the global environment (this isolates the code in the document
+        # from the code in this app).
+        rmarkdown::render(tempReport, output_file = file,
+                          params = params,
+                          envir = new.env(parent = globalenv())
+        )
+      }
+    )
       
       
 # 

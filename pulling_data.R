@@ -1,17 +1,17 @@
-#install.packages(c("httr", "jsonlite", "lubridate"))
-library(httr)
-library(jsonlite)
-library(stringr)
-library(mosaic)
-library(scales)
-library(rnoaa)
-library(lubridate)
-library(magrittr)
-library(tidyverse)
-
+  #install.packages(c("httr", "jsonlite", "lubridate"))
+  library(httr)
+  library(jsonlite)
+  library(stringr)
+  library(mosaic)
+  library(scales)
+  library(rnoaa)
+  library(lubridate)
+  library(magrittr)
+  library(tidyverse)
+  
 
 # This is the url to give datat
-#https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=13055340&startDT=2018-04-01
+  #https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=13055340&startDT=2018-04-01
 
 
 # 
@@ -23,7 +23,7 @@ first_day_of_month_wday <- function(dx) {
 }
 
 input <- list()
-input$dateRange <- c("2019-03-01","2019-03-31")
+input$dateRange <- c("2019-01-01","2019-01-31")
 h <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=13055340&startDT=",input$dateRange[1],"&endDT=",input$dateRange[2])
 
 #get all data from 2000 to make predictions 
@@ -53,7 +53,6 @@ df <- raw_3a %>%
       month %in%  c(12,1,2)  ~ "Winter",
       month %in%  3:5  ~ "Spring",
       month %in% 6:8 ~ "Summer")) 
-
 
 
 #######
@@ -119,8 +118,6 @@ ggplot(df, aes(x=date_time, y=flow)) +
                        midpoint = median(df$flow)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "left") 
 
-
-
 ######   
 #get weekly average
 week_avg <- df %>% 
@@ -131,9 +128,9 @@ week_avg <- df %>%
 
 month_avg <- df %>% 
   group_by(month) %>% 
-  summarise(mean = mean(flow,na.rm=T),max = max(flow,na.rm=T), min = min(flow,na.rm=T),Count = n()) %>% 
-  ungroup() %>% 
-  mutate(month_name = month.name[month])
+summarise(mean = mean(flow,na.rm=T),max = max(flow,na.rm=T), min = min(flow,na.rm=T),Count = n()) %>% 
+ungroup() %>% 
+mutate(month_name = month.name[month])
 
 #making df of all averages do DT 
 average_flow <- full_join(week_avg,month_avg) %>% 
@@ -147,30 +144,6 @@ average_flow <- full_join(week_avg,month_avg) %>%
   arrange(month) %>% 
   select(-c(month,Month))
   
-
-#for the Driggs plant GHCND:USC00102676
-ncdc_stations(datasetid='GHCND', locationid='FIPS:16081', stationid='GHCND:USC00102676', token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
-#out_d <- ncdc(datasetid='GHCND', stationid='GHCND:USC00102676', datatypeid='PRCP', startdate = '2000-12-01', enddate = '2000-12-31',token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
-out_d <- ncdc(datasetid = 'GHCND', stationid = 'GHCND:USC00102676',
-              # datatypeid= c('TMAX',  'PRCP'),
-              datatypeid= c('PRCP'),
-              startdate = '2000-12-01', enddate = '2000-12-31', limit = 1000,
-              token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
-
-data <- out_d$data %>% 
-  as_tibble() %>% 
-  # filter(datatype == "TMAX" | datatype == "PRCP") %>% 
-  filter(datatype == "PRCP") %>% 
-  select(date, datatype, station, value) %>% 
-  mutate(date = as.Date(date)) %>% 
-  mutate(station = gsub("GHCND:USC00102676", "rnoaa", station)) %>% 
-  mutate(value = case_when(
-    datatype == "PRCP"  ~ value/10)) 
-# datatype == "TMAX" ~ value/10))
-
-#for the TETONIA EXPERIMENT STATION GHCND:USC00109065
-ncdc_stations(datasetid='GHCND', locationid='FIPS:16081', stationid='GHCND:USC00109065', token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
-out_t <- ncdc(datasetid='GHCND', stationid='GHCND:USC00109065', startdate = '2000-12-01', enddate = '2000-12-31',token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
 
 #NCDC = national climate data center
 #datasetid: (required) Accepts a single valid dataset id. Data returned will be from the dataset specified
@@ -205,14 +178,52 @@ out_t <- ncdc(datasetid='GHCND', stationid='GHCND:USC00109065', startdate = '200
 # fl_miss = missing
 # fl_u = units
 
-#Hone in on the weather data, you need to have this done by next week 
+# PRCP = Precipitation (mm or inches as per user preference, 
+#                       inches to hundredths on Daily Form pdf file)
 
+# SNOW = Snowfall (mm or inches as per user preference, inches 
+#                  to tenths on Daily Form pdf file)
 
+# SNWD = Snow depth (mm or inches as per user preference, 
+#                    inches on Daily Form pdf file)
 
+# TMAX = Maximum temperature (Fahrenheit or Celsius as per user preference, 
+#                             Fahrenheit to tenths on Daily Form pdf file)
 
+# TMIN = Minimum temperature (Fahrenheit or Celsius as per user preference, 
+#                             Fahrenheit to tenths on Daily Form pdf file)
 
+###I used the https://www.ncdc.noaa.gov/cdo-web/search to compare my results 
+  #to make sure I was reading in the correct datat 
+#for the Driggs plant GHCND:USC00102676
 
+#convert celsius to fahrenheit
+cel_to_far <- function(temp) {
+  fahr <- ((temp * 1.8) + 32)
+  return(fahr)
+}
 
+ncdc_stations(datasetid='GHCND', locationid='FIPS:16081', stationid='GHCND:USC00102676', token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
+#out_d <- ncdc(datasetid='GHCND', stationid='GHCND:USC00102676', datatypeid='PRCP', startdate = '2000-12-01', enddate = '2000-12-31',token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE")
+out_d <- ncdc(datasetid = 'GHCND', stationid = 'GHCND:USC00102676',
+              # datatypeid= c('TMAX',  'PRCP'),
+              datatypeid= c('PRCP','TMAX','TMIN'),
+              startdate = '2000-12-01', enddate = '2000-12-31', limit = 1000,
+              token = "sySPPPjTnKPCJCgczZQUyOhBJqCsWJbE",
+              add_units=T)
+
+data <- out_d$data %>% 
+  as_tibble() %>% 
+  # filter(datatype == "TMAX" | datatype == "PRCP") %>% 
+  filter(datatype == "PRCP"|datatype == "TMAX"|datatype == "TMIN") %>% 
+  select(date, datatype, station, value, units) %>% 
+  mutate(date = as.Date(date)) %>% 
+  mutate(station = gsub("GHCND:USC00102676", "Driggs", station)) %>% 
+  mutate(value = case_when(
+    datatype == "PRCP"  ~ (value*39.3701)/10000, #conveting from m to in
+    datatype == "TMAX" ~ cel_to_far(value)/100,
+    datatype == "TMIN" ~ cel_to_far(value)/100)) %>%  
+  mutate_at(4, funs(round(., 2)))
 
 
 

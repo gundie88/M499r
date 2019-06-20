@@ -1,0 +1,97 @@
+---
+title: "DMR Report"
+output: word_document
+params:
+  n: NA
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(plotly)
+library(knitr)
+library(httr)
+library(jsonlite)
+library(stringr)
+library(mosaic)
+library(scales)
+library(rnoaa)
+library(lubridate)
+library(magrittr)
+library(tidyverse)
+# The `params` object is available in the document.
+df <- data.frame(params$n)
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# plot_ly() %>%
+#         add_trace(x=as.Date(df$date_time),
+#                   y=df$flow,
+#                   size=df$flow,
+#                   marker = list(
+#                     color = 'rgba(93, 204, 25, 1)',
+#                     line = list(
+#                       color = 'rgba(93, 204, 25, 1)'
+#                     )
+#                   ),
+#                   line = list(
+#                     color = 'rgba(0, 0, 0, 1)',
+#                     line = list(
+#                       color = 'rgba(0, 0, 0, 1)'
+#                     )
+#                   ),
+#                   # colors=c("green","black"),
+#                   mode='markers+lines',
+#                   mode="scatter",
+#                   name="Average Flow",
+#                   hoverinfo='text',
+#                   text=paste0(df$day,', ', format(df$date_time,format="%d-%m-%Y"), '\n', 'Flow: ', df$flow)) %>%
+#         # add_trace(x=as.Date(df$date_time),
+#         #           y=df$flow,
+#         #           # color = df$flow,
+#         #           mode='lines',
+#         #           mode="scatter",
+#         #           name="Average Flow") %>%
+#         layout(xaxis=list(
+#           tick0 = df$date_time[1]),
+#           dtick = 7)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#get weekly average
+week_avg <- df %>% 
+  group_by(week_num,month) %>% 
+  summarise(mean = mean(flow,na.rm=T),
+            max = max(flow,na.rm=T), 
+            min = min(flow,na.rm=T),
+            Count = n()) %>% 
+  ungroup() %>% 
+  mutate(month_name = month.name[month], month = month) 
+
+month_avg <- df %>% 
+  group_by(month) %>% 
+  summarise(mean = mean(flow,na.rm=T),
+          max = max(flow,na.rm=T),
+          min = min(flow,na.rm=T),
+          Count = n()) %>% 
+  ungroup() %>% 
+  mutate(month_name = month.name[month])
+
+#making n of all averages do DT 
+average_flow <- full_join(week_avg,month_avg) %>% 
+  mutate_if(is.factor, ~as.numeric(as.character(.))) %>% 
+  mutate_at(3, funs(round(., 1))) %>% 
+  # select(-c(month)) %>% 
+  select(-Count, everything()) %>% 
+  select(month_name, everything()) %>% 
+  mutate(week_num=ifelse(is.na(week_num),
+                         str_c(month_name,"Average"),week_num)) %>% 
+  rename(Month = month_name, `Week Number` = week_num) %>%
+  arrange(month) %>% 
+  select(-c(month,Month))
+
+kable(average_flow) #%>% 
+#   kable_styling(bootstrap_options = "striped", full_width = F)
+
+```
+
