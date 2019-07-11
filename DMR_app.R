@@ -9,6 +9,7 @@ library(scales)
 library(lubridate)
 library(plotly)
 library(tidyverse)
+library(tableHTML)
 
 
 if (interactive()){
@@ -30,7 +31,7 @@ ui <- dashboardPage(
                                # ),
                                # column(
                                 # width = 6,
-                                tableOutput("selected_dailies"),
+                             tableHTML_output("selected_dailies"),
                              downloadButton("report", "Generate report")
                     ),
                     tabPanel("Data", 
@@ -190,9 +191,31 @@ server <- function(input, output){
       
     })
     
-    #making a table from the average_flow data
-    output$selected_dailies <- renderTable({average_flow()},
-                                           include.rownames=FALSE)
+    ##making a table from the average_flow data
+    # output$selected_dailies <- renderTable({average_flow()},
+    #                                        include.rownames=FALSE,
+    #                                        hover = TRUE)
+    
+    #Using tableHTML to get the conditional formatting
+    output$selected_dailies <- render_tableHTML({
+      data <- average_flow()
+      # //Some operations on data
+      data %>% 
+        tableHTML(rownames = F, border = 0, widths = rep(74, 5)) %>% 
+        add_css_conditional_column(conditional = '<',
+                                   value = 81,
+                                   css = list(c('background-color'),
+                                              c('#ff0000')),
+                                   columns = 2) 
+      })
+    
+    
+    
+    
+    # #this is library DT i didnt like the look of the table.
+    # output$selected_dailies <- renderDataTable(average_flow(),
+    #                                            rownames = FALSE)
+    
     #download data for the data tab
     # output$downloadData <- downloadHandler(
     #   filename = function() {
